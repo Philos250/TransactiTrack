@@ -1,19 +1,8 @@
-// import React from 'react';
-
-// const Transactions = () => (
-//   <div>
-//     <h1>Transactions</h1>
-//     <p>List of all transactions will go here.</p>
-//   </div>
-// );
-
-// export default Transactions;
-
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { toast, ToastContainer } from 'react-toastify'; // Import toast and ToastContainer
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import API, { fetchTransactions, createTransaction, fetchCategories } from '../services/api'; // Ensure fetchCategories is imported
+import API, { fetchTransactions, createTransaction, fetchCategories } from '../services/api';
 
 const TransactionsContainer = styled.div`
   padding: 16px;
@@ -38,6 +27,13 @@ const Form = styled.form`
 `;
 
 const Input = styled.input`
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+`;
+
+const Select = styled.select`
   padding: 8px;
   font-size: 1rem;
   border: 1px solid #ccc;
@@ -85,11 +81,16 @@ const DeleteButton = styled.button`
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
-  const [categories, setCategories] = useState([]); // Added state for categories
-  const [formData, setFormData] = useState({ amount: '', description: '', category: '' });
+  const [categories, setCategories] = useState([]);
+  const [formData, setFormData] = useState({
+    amount: '',
+    description: '',
+    category: '',
+    accountType: '',
+    type: '',
+  });
 
   useEffect(() => {
-    // Fetch transactions and categories on component mount
     const fetchData = async () => {
       try {
         const [transactionsRes, categoriesRes] = await Promise.all([
@@ -116,10 +117,10 @@ const Transactions = () => {
     try {
       const { data } = await createTransaction(formData);
       setTransactions([...transactions, data]);
-      setFormData({ amount: '', description: '', category: '' });
+      setFormData({ amount: '', description: '', category: '', accountType: '', type: '' });
       toast.success('Transaction added successfully!');
     } catch (error) {
-      toast.error('Error adding transaction');
+      toast.error(error.response?.data?.message || 'Error adding transaction');
       console.error('Error creating transaction:', error);
     }
   };
@@ -137,7 +138,7 @@ const Transactions = () => {
 
   return (
     <TransactionsContainer>
-      <ToastContainer /> {/* Ensure ToastContainer is added */}
+      <ToastContainer />
       <Header>Transactions</Header>
       <Form onSubmit={handleSubmit}>
         <Input
@@ -156,12 +157,7 @@ const Transactions = () => {
           onChange={handleChange}
           required
         />
-        <select
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          required
-        >
+        <Select name="category" value={formData.category} onChange={handleChange} required>
           <option value="" disabled>
             Select Category
           </option>
@@ -170,17 +166,32 @@ const Transactions = () => {
               {category.name}
             </option>
           ))}
-        </select>
+        </Select>
+        <Select name="accountType" value={formData.accountType} onChange={handleChange} required>
+          <option value="" disabled>
+            Select Account Type
+          </option>
+          <option value="bank">Bank</option>
+          <option value="mobile money">Mobile Money</option>
+          <option value="cash">Cash</option>
+        </Select>
+        <Select name="type" value={formData.type} onChange={handleChange} required>
+          <option value="" disabled>
+            Select Transaction Type
+          </option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </Select>
         <Button type="submit">Add Transaction</Button>
       </Form>
       <TransactionList>
         {transactions.map((transaction) => (
           <TransactionItem key={transaction._id}>
             <span>{transaction.description}</span>
-            <span>${transaction.amount ? transaction.amount.toFixed(2) : '0.00'}</span>
-            <span>
-              {categories.find((cat) => cat._id === transaction.category)?.name || 'No Category'}
-            </span>
+            <span>${transaction.amount?.toFixed(2)}</span>
+            <span>{categories.find((cat) => cat._id === transaction.category)?.name || 'No Category'}</span>
+            <span>{transaction.accountType}</span>
+            <span>{transaction.type}</span>
             <DeleteButton onClick={() => handleDelete(transaction._id)}>Delete</DeleteButton>
           </TransactionItem>
         ))}

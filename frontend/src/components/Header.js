@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { NavLink } from 'react-router-dom';
 
 const HeaderContainer = styled.header`
   background-color: ${({ theme }) => theme.colors.primary};
@@ -34,6 +35,11 @@ const Nav = styled.nav`
     font-size: 1rem;
     padding: ${({ theme }) => theme.spacing(0.5)} ${({ theme }) => theme.spacing(1)};
     border-radius: 4px;
+    text-decoration: none;
+
+    &.active {
+      background-color: ${({ theme }) => theme.colors.secondary};
+    }
 
     &:hover {
       background-color: ${({ theme }) => theme.colors.secondary};
@@ -46,9 +52,10 @@ const Header = () => (
     <Logo>TransactiTrack</Logo>
     <Nav>
       <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/transactions">Transactions</a></li>
-        <li><a href="/categories">Categories</a></li>
+        <li><NavLink to="/" exact activeClassName="active">Home</NavLink></li>
+        <li><NavLink to="/transactions" activeClassName="active">Transactions</NavLink></li>
+        <li><NavLink to="/categories" activeClassName="active">Categories</NavLink></li>
+        <li><NavLink to="/reports" activeClassName="active">Reports</NavLink></li>
       </ul>
     </Nav>
   </HeaderContainer>

@@ -20,4 +20,8 @@ export const createTransaction = (transaction) => API.post('/transactions', tran
 export const updateTransaction = (id, transaction) => API.put(`/transactions/${id}`, transaction);
 export const deleteTransaction = (id) => API.delete(`/transactions/${id}`);
 
+// Add fetchReport to fetch reports based on date range
+export const fetchReport = (startDate, endDate) =>
+  API.get(`/transactions/report?startDate=${startDate}&endDate=${endDate}`);
+
 export default API;

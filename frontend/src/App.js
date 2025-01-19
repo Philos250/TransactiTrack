@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Transactions from './pages/Transactions';
 import Categories from './pages/Categories';
+import Reports from './pages/Reports';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />

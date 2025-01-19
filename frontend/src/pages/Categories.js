@@ -69,7 +69,7 @@ const CategoryItem = styled.li`
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
-  const [categoryName, setCategoryName] = useState('');
+  const [formData, setFormData] = useState({ name: '', budget: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,17 +84,26 @@ const Categories = () => {
     fetchData();
   }, []);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!categoryName) {
+    if (!formData.name) {
       toast.error('Category name is required');
+      return;
+    }
+    if (!formData.budget || formData.budget <= 0) {
+      toast.error('Budget is required and must be greater than zero');
       return;
     }
 
     try {
-      const { data } = await createCategory({ name: categoryName });
+      const { data } = await createCategory(formData);
       setCategories([...categories, data]);
-      setCategoryName('');
+      setFormData({ name: '', budget: '' });
       toast.success('Category added successfully!');
     } catch (error) {
       toast.error('Error adding category');
@@ -109,16 +118,30 @@ const Categories = () => {
       <Form onSubmit={handleSubmit}>
         <Input
           type="text"
+          name="name"
           placeholder="Category Name"
-          value={categoryName}
-          onChange={(e) => setCategoryName(e.target.value)}
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
+        <Input
+          type="number"
+          name="budget"
+          placeholder="Set Budget"
+          value={formData.budget}
+          onChange={handleChange}
           required
         />
         <Button type="submit">Add Category</Button>
       </Form>
       <CategoryList>
         {categories.map((category) => (
-          <CategoryItem key={category._id}>{category.name}</CategoryItem>
+          <CategoryItem key={category._id}>
+            <div>
+              <strong>{category.name}</strong>
+              <p>Budget: ${category.budget}</p>
+            </div>
+          </CategoryItem>
         ))}
       </CategoryList>
     </CategoriesContainer>
