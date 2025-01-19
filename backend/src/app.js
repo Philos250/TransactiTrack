@@ -38,7 +38,7 @@ app.use('/api/categories', require('./routes/categoryRoutes'));
 
 // Default route for the root URL
 app.get('/', (req, res) => {
-  res.send('Welcome to the TransactiTrack API!');
+  res.send('Welcome to the TransactiTrack API BACKEND!');
 });
 
 module.exports = app;
