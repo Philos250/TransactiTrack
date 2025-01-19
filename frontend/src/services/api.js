@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // Create an Axios instance
 const API = axios.create({
-  baseURL: 'http://localhost:4000/api', // Backend base URL
+  // baseURL: 'http://localhost:4000/api', // Backend base URL
+  baseURL: 'https://transactitrack.onrender.com/api', // Render backend base URL
   headers: {
     'Content-Type': 'application/json',
   },
