@@ -3,6 +3,8 @@ import { fetchReport } from '../services/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styled from 'styled-components';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const ReportsContainer = styled.div`
   padding: 16px;
@@ -34,23 +36,40 @@ const Button = styled.button`
   border-radius: 4px;
   cursor: pointer;
   width: 100%;
+  margin-top: 8px;
 
   &:hover {
     background-color: #0056b3;
   }
 `;
 
-const List = styled.ul`
-  list-style: none;
-  padding: 0;
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
   margin-top: 16px;
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f1f1f1;
+  }
 `;
 
-const ListItem = styled.li`
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #ccc;
+const Row = styled.tr`
+  td {
+    color: ${({ type }) => (type === 'income' ? 'green' : type === 'expense' ? 'red' : 'inherit')};
+    font-weight: ${({ type }) => (type ? 'bold' : 'normal')};
+  }
+`;
+
+const NoDataMessage = styled.p`
+  text-align: center;
+  color: #888;
+  margin-top: 16px;
 `;
 
 const Reports = () => {
@@ -67,11 +86,36 @@ const Reports = () => {
     try {
       const { data } = await fetchReport(startDate, endDate);
       setReport(data);
-      toast.success('Report generated successfully!');
+      if (data.length > 0) {
+        toast.success('Report generated successfully!');
+      } else {
+        toast.info('No data found for the selected date range');
+      }
     } catch (error) {
       toast.error('Error generating report');
       console.error(error);
     }
+  };
+
+  const handleDownloadPDF = () => {
+    if (report.length === 0) {
+      toast.error('No data available to download');
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.text('Transaction Report', 14, 10);
+    doc.autoTable({
+      head: [['Description', 'Amount', 'Type', 'Date']],
+      body: report.map((item) => [
+        item.description,
+        `$${item.amount.toFixed(2)}`,
+        item.type,
+        new Date(item.date).toLocaleDateString(),
+      ]),
+    });
+    doc.save('Transaction_Report.pdf');
+    toast.success('PDF downloaded successfully!');
   };
 
   return (
@@ -91,15 +135,34 @@ const Reports = () => {
         placeholder="End Date"
       />
       <Button onClick={handleGenerateReport}>Generate Report</Button>
-      <List>
-        {report.map((item) => (
-          <ListItem key={item._id}>
-            <span>{item.description}</span>
-            <span>${item.amount.toFixed(2)}</span>
-            <span>{item.type}</span>
-          </ListItem>
-        ))}
-      </List>
+      <Button onClick={handleDownloadPDF} style={{ backgroundColor: '#28a745', marginTop: '8px' }}>
+        Download PDF
+      </Button>
+
+      {report.length > 0 ? (
+        <Table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Type</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.map((item) => (
+              <Row key={item._id} type={item.type}>
+                <td>{item.description}</td>
+                <td>${item.amount.toFixed(2)}</td>
+                <td>{item.type}</td>
+                <td>{new Date(item.date).toLocaleDateString()}</td>
+              </Row>
+            ))}
+          </tbody>
+        </Table>
+      ) : (
+        <NoDataMessage>No data found</NoDataMessage>
+      )}
     </ReportsContainer>
   );
 };
