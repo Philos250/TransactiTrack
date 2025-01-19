@@ -2,6 +2,11 @@
 
 **TransactiTrack** is a modern, responsive web application designed to track financial transactions and manage categories effectively. It features a **Node.js backend** and a **React frontend**, integrated with **MongoDB Atlas** for database management.
 
+## Live Demo
+**- Frontend:** https://transactitrack.netlify.app/
+**- Backend:** https://transactitrack.onrender.com/
+
+
 ---
 
 ## Features
