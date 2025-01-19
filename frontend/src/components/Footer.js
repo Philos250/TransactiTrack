@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 const FooterContainer = styled.footer`
   background-color: ${({ theme }) => theme.colors.secondary};
-  padding: ${({ theme }) => theme.spacing(2)};
+  padding: ${({ theme }) => theme.spacing(3)};
   text-align: center;
   font-size: 0.9rem;
 `;

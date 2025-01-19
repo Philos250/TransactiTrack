@@ -1,14 +1,13 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
+app.use(cors({ origin: 'http://localhost:3000', credentials: true })); // Allow requests from frontend
+app.use(express.json()); // Parse JSON request bodies (replaces body-parser)
 
-// Placeholder routes (replace with actual ones)
+// Routes
 app.use('/api/transactions', require('./routes/transactionRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 

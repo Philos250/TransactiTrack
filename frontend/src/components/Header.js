@@ -7,26 +7,36 @@ const HeaderContainer = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 const Logo = styled.h1`
   color: #fff;
-  font-size: 1.5rem;
+  font-size: 2rem;
 `;
 
 const Nav = styled.nav`
   ul {
     display: flex;
     gap: ${({ theme }) => theme.spacing(2)};
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: center;
+    }
   }
 
   a {
     color: #fff;
-    font-weight: bold;
-    transition: color 0.2s;
+    font-size: 1rem;
+    padding: ${({ theme }) => theme.spacing(0.5)} ${({ theme }) => theme.spacing(1)};
+    border-radius: 4px;
 
     &:hover {
-      color: ${({ theme }) => theme.colors.secondary};
+      background-color: ${({ theme }) => theme.colors.secondary};
     }
   }
 `;

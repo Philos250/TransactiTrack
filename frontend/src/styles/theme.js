@@ -1,11 +1,12 @@
 const theme = {
     colors: {
-      background: '#f6f8fa',
-      text: '#24292e',
-      primary: '#0366d6',
-      secondary: '#e1e4e8',
-      link: '#0366d6',
-      border: '#d1d5da',
+      background: '#f4f8fb',
+      text: '#333333',
+      primary: '#4a90e2',
+      secondary: '#d9e9f9',
+      link: '#4a90e2',
+      border: '#cbd6e2',
+      danger: '#e74c3c',
     },
     spacing: (factor) => `${factor * 8}px`,
   };
