@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../services/api';
+import { fetchCategories, fetchTransactions, createCategory, updateCategory, deleteCategory } from '../services/api';
 import { FaEdit, FaTrashAlt } from 'react-icons/fa';
 
 // Styled Components
@@ -142,26 +142,36 @@ const CancelButton = styled(ModalButton)`
 // Categories Component
 const Categories = () => {
   const [categories, setCategories] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [formData, setFormData] = useState({ name: '', budget: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [currentCategoryId, setCurrentCategoryId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [deleteCategoryId, setDeleteCategoryId] = useState(null);
 
-  const totalBudget = categories.reduce((sum, cat) => sum + parseFloat(cat.budget || 0), 0);
-  const budgetLeft = 1000000 - totalBudget; // Example fixed total budget for illustration
-
+  // Fetch categories and transactions data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await fetchCategories();
-        setCategories(data);
+        const [categoriesRes, transactionsRes] = await Promise.all([
+          fetchCategories(),
+          fetchTransactions(),
+        ]);
+        setCategories(categoriesRes.data);
+        setTransactions(transactionsRes.data);
       } catch (error) {
-        toast.error('Failed to load categories');
+        toast.error('Failed to load data');
       }
     };
     fetchData();
   }, []);
+
+  // Calculate total budget and budget left
+  const totalBudget = categories.reduce((sum, cat) => sum + parseFloat(cat.budget || 0), 0);
+  const totalExpenses = transactions
+    .filter((transaction) => transaction.type === 'expense')
+    .reduce((sum, transaction) => sum + parseFloat(transaction.amount || 0), 0);
+  const budgetLeft = totalBudget - totalExpenses;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -223,11 +233,11 @@ const Categories = () => {
       <TopFlexbox>
         <StatCard bg="#007bff">
           <h2>Total Budget</h2>
-          <p>${totalBudget.toLocaleString()}</p>
+          <p>{totalBudget.toLocaleString()} RWF</p>
         </StatCard>
         <StatCard bg="#28a745">
           <h2>Budget Left</h2>
-          <p>${budgetLeft.toLocaleString()}</p>
+          <p>{budgetLeft.toLocaleString()} RWF</p>
         </StatCard>
         <StatCard bg="#ffc107">
           <h2>Total Categories</h2>
@@ -263,7 +273,7 @@ const Categories = () => {
           {categories.map((category) => (
             <tr key={category._id}>
               <Td>{category.name}</Td>
-              <Td>${parseFloat(category.budget).toLocaleString()}</Td>
+              <Td>{parseFloat(category.budget).toLocaleString()} RWF</Td>
               <Td>
                 <Button onClick={() => handleEdit(category)}>
                   <FaEdit /> Edit

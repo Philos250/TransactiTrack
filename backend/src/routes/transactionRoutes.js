@@ -1,5 +1,10 @@
 const express = require('express');
-const { getTransactions, createTransaction } = require('../controllers/transactionController');
+const {
+  getTransactions,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
+} = require('../controllers/transactionController');
 const Transaction = require('../models/Transaction'); // Import the Transaction model
 
 const router = express.Router();
@@ -9,6 +14,12 @@ router.get('/', getTransactions);
 
 // Route to create a transaction
 router.post('/', createTransaction);
+
+// Route to update a transaction
+router.put('/:id', updateTransaction); // The :id parameter MUST matches the transaction ID
+
+// Route to delete a transaction
+router.delete('/:id', deleteTransaction); // The :id parameter MUST matches the transaction ID
 
 // Route to generate a report based on time range
 router.get('/report', async (req, res) => {

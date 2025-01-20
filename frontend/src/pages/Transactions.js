@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// import API, { fetchTransactions, createTransaction, updateTransaction, fetchCategories, deleteTransaction } from '../services/api';
 import { fetchTransactions, createTransaction, updateTransaction, fetchCategories, deleteTransaction } from '../services/api';
 import { FaTrashAlt, FaPlus, FaEdit } from 'react-icons/fa';
 
@@ -69,19 +68,19 @@ const Select = styled.select`
 `;
 
 const Button = styled.button`
-  padding: 10px;
-  background-color: #007bff;
+  background-color: #007bff; /* Set a distinct color for Edit button */
   color: white;
+  padding: 8px; /* Match padding with Delete button */
+  border: none;
   border-radius: 4px;
-  font-size: 1.2rem;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  gap: 10px;
+  font-size: 1rem; /* Match text size with Delete button */
+  gap: 5px; /* Space between icon and text */
 
   &:hover {
-    background-color: #0056b3;
+    background-color: #0056b3; /* Slightly darker shade on hover */
   }
 `;
 
@@ -173,6 +172,33 @@ const CancelButton = styled.button`
   }
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const PaginationButton = styled.button`
+  background-color: ${({ active }) => (active ? '#007bff' : '#f9f9f9')};
+  color: ${({ active }) => (active ? 'white' : '#007bff')};
+  border: 1px solid #007bff;
+  padding: 8px 12px;
+  margin: 0 5px;
+  cursor: pointer;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: #0056b3;
+    color: white;
+  }
+
+  &:disabled {
+    background-color: #f1f1f1;
+    color: #bdbdbd;
+    cursor: not-allowed;
+  }
+`;
+
 const formatNumber = (num) => num.toLocaleString();
 
 // Main Component
@@ -191,14 +217,21 @@ const Transactions = () => {
   const [showModal, setShowModal] = useState(false);
   const [deleteTransactionId, setDeleteTransactionId] = useState(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const transactionsPerPage = 5;
+
+  const totalSpent = transactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+
   const totalBudget = categories.reduce((sum, cat) => sum + (cat.budget || 0), 0);
-  const totalSpent = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
   const budgetLeft = totalBudget - totalSpent;
 
-  const transactionsByChannel = transactions.reduce((acc, t) => {
-    acc[t.accountType] = (acc[t.accountType] || 0) + 1;
-    return acc;
-  }, {});
+  const indexOfLastTransaction = currentPage * transactionsPerPage;
+  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
+  const currentTransactions = transactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
+
+  const totalPages = Math.ceil(transactions.length / transactionsPerPage);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -226,7 +259,11 @@ const Transactions = () => {
     e.preventDefault();
     try {
       if (isEditing) {
-        const { data } = await updateTransaction(currentTransactionId, formData);
+        // Ensure you're passing the correct transaction ID and updated fields
+        const { data } = await updateTransaction(currentTransactionId, {
+          ...formData,
+          category: formData.category, // Ensure category is the ID
+        });
         setTransactions(transactions.map((t) => (t._id === data._id ? data : t)));
         toast.success('Transaction updated successfully!');
       } else {
@@ -234,26 +271,31 @@ const Transactions = () => {
         setTransactions([...transactions, data]);
         toast.success('Transaction added successfully!');
       }
+      // Reset the form
       setFormData({ amount: '', description: '', category: '', accountType: '', type: '' });
       setIsEditing(false);
       setCurrentTransactionId(null);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error saving transaction');
-      console.error('Error saving transaction:', error);
+      // Extract detailed error message
+      const errorMessage =
+        error.response?.data?.message || error.message || 'An error occurred while saving';
+      toast.error(`Error saving transaction: ${errorMessage}`);
+      console.error('Error saving transaction:', error.response || error);
     }
   };
+
 
   const handleEdit = (transaction) => {
     setIsEditing(true);
     setFormData({
       amount: transaction.amount,
       description: transaction.description,
-      category: transaction.category,
+      category: transaction.category?._id || '',
       accountType: transaction.accountType,
       type: transaction.type,
     });
     setCurrentTransactionId(transaction._id);
-  };  
+  };
 
   const handleDeleteConfirmation = (id) => {
     setDeleteTransactionId(id);
@@ -266,13 +308,17 @@ const Transactions = () => {
       setTransactions(transactions.filter((t) => t._id !== deleteTransactionId));
       toast.success('Transaction deleted successfully!');
     } catch (error) {
-      toast.error('Error deleting transaction');
-      console.error('Error deleting transaction:', error);
+      // Extract detailed error message
+      const errorMessage =
+        error.response?.data?.message || error.message || 'An error occurred while deleting';
+      toast.error(`Error deleting transaction: ${errorMessage}`);
+      console.error('Error deleting transaction:', error.response || error);
     }
     setShowModal(false);
     setDeleteTransactionId(null);
   };
-  
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <TransactionsContainer>
@@ -281,23 +327,15 @@ const Transactions = () => {
       <TopFlexbox>
         <StatCard bg="#007bff">
           <h2>Total Budget</h2>
-          <p>${formatNumber(totalBudget)}</p>
+          <p>{formatNumber(totalBudget)} RWF</p>
         </StatCard>
         <StatCard bg="#28a745">
           <h2>Budget Left</h2>
-          <p>${formatNumber(budgetLeft)}</p>
+          <p>{formatNumber(budgetLeft)} RWF</p>
         </StatCard>
         <StatCard bg="#ffc107">
           <h2>Total Transactions</h2>
           <p>{transactions.length}</p>
-        </StatCard>
-        <StatCard bg="#6c757d">
-          <h2>By Channel</h2>
-          <p>
-            {Object.entries(transactionsByChannel)
-              .map(([channel, count]) => `${channel}: ${count}`)
-              .join(', ')}
-          </p>
         </StatCard>
       </TopFlexbox>
       <Form onSubmit={handleSubmit}>
@@ -358,13 +396,11 @@ const Transactions = () => {
           </tr>
         </thead>
         <tbody>
-          {transactions.map((transaction) => (
+          {currentTransactions.map((transaction) => (
             <tr key={transaction._id}>
               <Td>{transaction.description}</Td>
-              <Td>${formatNumber(transaction.amount)}</Td>
-              <Td>
-                {categories.find((cat) => cat._id === transaction.category)?.name || 'No Category'}
-              </Td>
+              <Td>{formatNumber(transaction.amount)} RWF</Td>
+              <Td>{transaction.category?.name || 'No Category'}</Td>
               <Td>{transaction.accountType}</Td>
               <Td>{transaction.type}</Td>
               <Td>
@@ -389,6 +425,17 @@ const Transactions = () => {
           </ModalContent>
         </ModalOverlay>
       )}
+      <PaginationContainer>
+        {[...Array(totalPages).keys()].map((page) => (
+          <PaginationButton
+            key={page + 1}
+            active={page + 1 === currentPage}
+            onClick={() => paginate(page + 1)}
+          >
+            {page + 1}
+          </PaginationButton>
+        ))}
+      </PaginationContainer>
     </TransactionsContainer>
   );
 };

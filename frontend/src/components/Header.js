@@ -39,10 +39,12 @@ const Nav = styled.nav`
 
     &.active {
       background-color: ${({ theme }) => theme.colors.secondary};
+      color: ${({ theme }) => theme.colors.primary};
     }
 
     &:hover {
       background-color: ${({ theme }) => theme.colors.secondary};
+      color: ${({ theme }) => theme.colors.primary};
     }
   }
 `;

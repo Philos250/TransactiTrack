@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { fetchReport } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { fetchReport, fetchCategories } from '../services/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styled from 'styled-components';
@@ -48,7 +48,8 @@ const Table = styled.table`
   border-collapse: collapse;
   margin-top: 16px;
 
-  th, td {
+  th,
+  td {
     border: 1px solid #ccc;
     padding: 8px;
     text-align: left;
@@ -72,19 +73,46 @@ const NoDataMessage = styled.p`
   margin-top: 16px;
 `;
 
+const SummaryRow = styled.tr`
+  font-weight: bold;
+  td {
+    text-align: right;
+    color: ${({ type }) => (type === 'income' ? 'green' : type === 'expense' ? 'red' : 'black')};
+  }
+`;
+
 const Reports = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [report, setReport] = useState([]);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategoriesData = async () => {
+      try {
+        const { data } = await fetchCategories();
+        setCategories(data);
+      } catch (error) {
+        toast.error('Failed to fetch categories');
+        console.error(error);
+      }
+    };
+
+    fetchCategoriesData();
+  }, []);
 
   const handleGenerateReport = async () => {
     if (!startDate || !endDate) {
       toast.error('Please select both start and end dates');
       return;
     }
-
+  
     try {
-      const { data } = await fetchReport(startDate, endDate);
+      const formattedStartDate = new Date(startDate).toISOString();
+      const formattedEndDate = new Date(endDate).toISOString();
+  
+      const { data } = await fetchReport(formattedStartDate, formattedEndDate);
+      console.log('Fetched transactions:', data);
       setReport(data);
       if (data.length > 0) {
         toast.success('Report generated successfully!');
@@ -95,28 +123,62 @@ const Reports = () => {
       toast.error('Error generating report');
       console.error(error);
     }
-  };
+  };  
+
 
   const handleDownloadPDF = () => {
     if (report.length === 0) {
       toast.error('No data available to download');
       return;
     }
-
+  
+    const totalSpent = report
+      .filter((t) => t.type === 'expense')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+  
+    const totalIncome = report
+      .filter((t) => t.type === 'income')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+  
+    const totalBudget = categories.reduce((sum, cat) => sum + (cat.budget || 0), 0);
+    const budgetLeft = totalBudget - totalSpent;
+  
     const doc = new jsPDF();
     doc.text('Transaction Report', 14, 10);
     doc.autoTable({
       head: [['Description', 'Amount', 'Type', 'Date']],
       body: report.map((item) => [
         item.description,
-        `$${item.amount.toFixed(2)}`,
+        `${item.amount.toFixed(2)} RWF`,
         item.type,
         new Date(item.date).toLocaleDateString(),
       ]),
     });
+    doc.autoTable({
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Income', `${totalIncome.toFixed(2)} RWF`],
+        ['Total Expense', `${totalSpent.toFixed(2)} RWF`],
+        ['Budget Left', `${budgetLeft.toFixed(2)} RWF`],
+      ],
+    });
     doc.save('Transaction_Report.pdf');
     toast.success('PDF downloaded successfully!');
-  };
+  };  
+
+
+  const totalIncome = report
+    .filter((item) => item.type === 'income')
+    .reduce((sum, item) => sum + item.amount, 0);
+
+    const totalSpent = report
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+  
+  const totalBudget = categories.reduce((sum, cat) => sum + (cat.budget || 0), 0);
+  
+  const budgetLeft = totalBudget - totalSpent;
+  
 
   return (
     <ReportsContainer>
@@ -140,26 +202,54 @@ const Reports = () => {
       </Button>
 
       {report.length > 0 ? (
-        <Table>
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Amount</th>
-              <th>Type</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.map((item) => (
-              <Row key={item._id} type={item.type}>
-                <td>{item.description}</td>
-                <td>${item.amount.toFixed(2)}</td>
-                <td>{item.type}</td>
-                <td>{new Date(item.date).toLocaleDateString()}</td>
-              </Row>
-            ))}
-          </tbody>
-        </Table>
+        <>
+          <Table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Type</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.map((item) => (
+                <Row key={item._id} type={item.type}>
+                  <td>{item.description}</td>
+                  <td>{item.amount.toFixed(2)} RWF</td>
+                  <td>{item.type}</td>
+                  <td>{new Date(item.date).toLocaleDateString()}</td>
+                </Row>
+              ))}
+            </tbody>
+            <tfoot>
+              <SummaryRow>
+                <td colSpan="3" style={{ fontWeight: 'bold' }}>Total Income</td>
+                <td style={{ color: 'green', fontWeight: 'bold' }}>
+                  {totalIncome.toFixed(2)} RWF
+                </td>
+              </SummaryRow>
+              <SummaryRow>
+                <td colSpan="3" style={{ fontWeight: 'bold' }}>Total Expense</td>
+                <td style={{ color: 'red', fontWeight: 'bold' }}>
+                  {totalSpent.toFixed(2)} RWF
+                </td>
+              </SummaryRow>
+              <SummaryRow>
+                <td colSpan="3" style={{ fontWeight: 'bold' }}>Budget Left</td>
+                <td
+                  style={{
+                    color: budgetLeft === 0 ? 'red' : 'green',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {budgetLeft.toFixed(2)} RWF
+                </td>
+              </SummaryRow>
+            </tfoot>
+
+          </Table>
+        </>
       ) : (
         <NoDataMessage>No data found</NoDataMessage>
       )}
