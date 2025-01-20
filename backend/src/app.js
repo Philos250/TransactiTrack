@@ -23,7 +23,7 @@ app.use(
   cors({
     origin: [
       'http://localhost:3000', // Localhost for development
-      'https://transactitrack.netlify.app/', // Netlify site URL
+      'https://transactitrack.netlify.app', // Netlify site URL
     ],
     credentials: true, // Allow credentials such as cookies or auth headers
   })
